@@ -38,25 +38,25 @@ _start:
     bl  mb0_c8_write
     bl  mb0_c8_read
     tst r0, #0x80000000
-    beq _vc_init_fail
+    beq .vc_init_fail
 
     @ get VC framebuffer address
     ldr r1, =vc_alloc_fb
     bl  mb0_c8_write
     bl  mb0_c8_read
     tst r0, #0x80000008
-    beq _vc_init_fail
+    beq .vc_init_fail
 
     @ check if the address is correct
     ldr r0, [r1, #20]
     cmp r0, #0
-    beq _vc_init_fail
+    beq .vc_init_fail
 
     @ draw "NO OS" text
     bl vc_draw_no_os_bmp
     b halt
 
-_vc_init_fail:
+.vc_init_fail:
     ldr r1, =txt_vc_fail
     bl uart0_puts
 
@@ -118,17 +118,17 @@ uart0_puts:
     status .req r4
     ldr dr,     =UART0_DR 
     ldr status, =UART0_FR
-_putc_loop:
+.putc_loop:
     ldr r0, [status]    @ wait for UART0 to be ready
     tst r0, #0x20
-    bne _putc_loop
+    bne .putc_loop
     ldrb char, [ptr]    @ char = *str
     cmp char, #0        @ jump to end if char == 0
-    beq _uart0_puts_end
+    beq .uart0_puts_end
     str char, [dr]      @ *UART0_DR = char
     add ptr, ptr, #1    @ str++
-    b _putc_loop
-_uart0_puts_end:
+    b .putc_loop
+.uart0_puts_end:
     .unreq ptr
     .unreq char
     .unreq dr
@@ -147,10 +147,10 @@ mb0_c8_write:
     status  .req r2
 
     ldr mailbox, =MBOX0
-_mb0_full:
+.mb0_full:
     ldr status, [mailbox, #0x18]
     tst status, #0x80000000  @ mailbox full flag
-    bne _mb0_full 
+    bne .mb0_full 
     add message, #8          @ channel 8
     str message, [mailbox, #0x20] @ write addr
     sub message, #8
@@ -170,15 +170,15 @@ mb0_c8_read:
     value   .req r4
 
     ldr mailbox, =MBOX0
-_mb0_empty:
+.mb0_empty:
     ldr status, [mailbox, #0x18] 
     tst status, #0x40000000  @ mailbox empty flag
-    bne _mb0_empty
+    bne .mb0_empty
 
     ldr value, [mailbox] @ check if the message channel is 8
     and r0, value, #0xf
     teq r0, #8
-    bne _mb0_empty
+    bne .mb0_empty
 
     ldr r0, [message, #4] 
     .unreq message
